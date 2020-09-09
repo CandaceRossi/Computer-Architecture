@@ -25,20 +25,18 @@ class CPU:
         # self.reg[7]  # reserved as stack pointer (SP)
         self.pc = 0  # program counter
         self.running = True
-        self.opcode = {LDI: '0b10000010',
-                       PRN: '0b01000111',
-                       HLT: '0b00000001',
-                       MUL: '0b10100010',
+        self.opcode = {LDI: self.ldi,
+                       PRN: self.prn,
+                       HLT: self.hlt,
+                       MUL: self.mul,
+                       ADD: self.add
                        }
 
     # def load(self):
     #     #     """Load a program into memory."""
-
     #     address = 0
-
     # #     # For now, we've just hardcoded a program:
     #     program = [0] * 256
-
     #     program = [
     #         # instruction tells cpu to do an operation (load data)
     #         # From print8.ls8
@@ -56,7 +54,6 @@ class CPU:
     #         # Once we advance the pc we'll hit HLT Op Code and terminate program.
     #         0b00000001,  # HLT
     #     ]
-
     #     for instruction in program:
     #         self.ram[address] = instruction
     #         address += 1
@@ -132,9 +129,7 @@ class CPU:
             # except FileNotFoundError:
             #     print(f"{sys.argv[1]} file not found")
             #     sys.exit(2)
-
     def run(self):
-        """Run the CPU."""
         # run programs
         self.load()
         # while true
@@ -149,35 +144,61 @@ class CPU:
             ir = self.ram_read[self.pc]
 
             # PC needs to be updated to point to the next instruction
-            # number of bytes used for opcode
+            # number of bytes shifted used for opcode
             num_bytes = ((ir >> 6) & 0b11) == 1
 
             # using ram_read(), read the bytes at PC+1 and PC+2 from RAM into variables operand_a and operand_b
             operand_a = self.ram_read(self.pc + 1)
             operand_b = self.ram_read(self.pc + 2)
 
-            if ir == LDI:
-                # Save some value to some register
-                # First number after instruction will be the Value to store
-                # second number after instruction will be register
-                # num = program[self.pc + 2]
-                # reg_location = self.ram[self.pc + 1]
-                # self.reg[reg_location] = num
-                # self.pc += 3
-                self.reg[operand_a] = operand_b
+            # if ir == LDI:
+            #     # Save some value to some register
+            #     # First number after instruction will be the Value to store
+            #     # second number after instruction will be register
+            #     # num = program[self.pc + 2]
+            #     # reg_location = self.ram[self.pc + 1]
+            #     # self.reg[reg_location] = num
+            #     # self.pc += 3
+            #     self.reg[operand_a] = operand_b
 
-            elif ir == PRN:
-                # reg_location = self.ram[self.pc + 1]
-                # print(self.reg[reg_location])
-                # self.pc += 2
-                print(self.reg[operand_a])
+            # elif ir == PRN:
+            #     # reg_location = self.ram[self.pc + 1]
+            #     # print(self.reg[reg_location])
+            #     # self.pc += 2
+            #     print(self.reg[operand_a])
 
-            elif ir == HLT:
-                self.running = False
-                self.pc += 1
+            # elif ir == HLT:
+            #     self.running = False
+            #     self.pc += 1
 
+            # else:
+            #     print("Unknown instruction {instruction}")
+            #     sys.exit(1)
+            # if num_bytes:
+            #     self.pc += num_byte
+
+            # check the instruction
+            if ir in self.opcode:
+                self.opcode[ir](operand_a, operand_b)
+                self.pc += num_bytes
             else:
-                print("Unknown instruction {instruction}")
-                sys.exit(1)
-            if num_bytes:
-                self.pc += num_byte
+                raise Exception("Unsupported operation")
+            # increase pc pointer
+            # if num_bytes:
+            #     self.pc += num_bytes
+
+    def ldi(self, operand_a, operand_b):
+        self.reg[operand_a] = operand_b
+
+    def prn(self, operand_a, _):
+        print(self.register[operand_a])
+
+    def hlt(self):
+        self.running = False
+        sys.exit()
+
+    def mul(self, operand_a, operand_b):
+        self.alu("MUL", operand_a, operand_b)
+
+    def add(self, operand_a, operand_b):
+        self.alu("ADD", operand_a, operand_b)
