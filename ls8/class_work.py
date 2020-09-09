@@ -84,3 +84,6 @@ while running:
    else:
         print(f"Unknown instruction {instruction}")
         sys.exit(1)
+
+
+# STACK LECTURE CLASS WORK

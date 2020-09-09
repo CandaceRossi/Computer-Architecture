@@ -8,7 +8,5 @@ from cpu import *
 
 cpu = CPU()
 
-cpu.load()
+cpu.load(sys.argv)
 cpu.run()
-
-# cpu.run(mult.ls8)??
