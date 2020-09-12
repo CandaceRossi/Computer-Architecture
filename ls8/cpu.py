@@ -5,14 +5,16 @@ import sys
 LDI = 0b10000010
 PRN = 0b01000111
 HLT = 0b00000001
-CMP = 0b10100111
-JMP = 0b01010100
-JEQ = 0b01010101
-JNE = 0b01010110
 MUL = 0b10100010
 ADD = 0b10100000
 PUSH = 0b01000101
 POP = 0b01000110
+CALL = 0b01010000
+RET = 0b00010001
+CMP = 0b10100111
+JMP = 0b01010100
+JEQ = 0b01010101
+JNE = 0b01010110
 SP = 7
 
 
@@ -26,12 +28,15 @@ class CPU:
         self.reg[SP] = 0xF4  # assign stack pointer
         self.pc = 0  # program counter
         self.running = True
+        self.flag = 0b00000000
         self.branchtable = {LDI: self.ldi,
                             PRN: self.prn,
                             MUL: self.mul,
                             ADD: self.add,
                             PUSH: self.push,
-                            POP: self.pop
+                            POP: self.pop,
+                            # CALL: self.call,
+                            # RET: self.ret
                             }
 
     def ram_read(self, mar):
@@ -57,6 +62,16 @@ class CPU:
         self.reg[SP] += 1
         self.pc += 2
 
+    # def call(self, operand_a, operand_b):
+    #     given_register = self.ram[self.pc + 1]
+    #     self.reg[SP] -= 1
+    #     self.ram[self.reg[SP]] = self.pc + 2
+    #     self.pc = self.reg[given_register]
+
+    # def ret(self, operand_a, _):
+    #     self.pc = self.ram[self.reg[SP]]
+    #     self.reg[SP] += 1
+
     def alu(self, opcode, reg_a, reg_b):
         """ALU operations."""
 
@@ -64,8 +79,22 @@ class CPU:
             self.reg[reg_a] += self.reg[reg_b]
         # elif op == "SUB": etc
         # elif opcode == "AND"
+        elif opcode == "CMP":
+            self.fl &= 0b00000000
+            # fl bits 00000LGE
+            if self.reg[reg_a] == self.reg[reg_b]:
+                # set E flag to 1
+                self.fl = 0b00000001
+            elif self.reg[reg_a] < self.reg[reg_b]:
+                # set L flag to 1
+                self.fl = 0b00000100
+            elif self.reg[reg_a] > self.reg[reg_b]:
+                # set G flag to 1
+                self.fl = 0b00000010
+
         else:
             raise Exception("Unsupported ALU operation")
+        self.pc += 3
 
     def trace(self):
         """
@@ -111,10 +140,6 @@ class CPU:
         print(self.reg[operand_a])
         self.pc += 2
 
-    # def hlt(self):
-    #     self.running = False
-    #     sys.exit()
-
     def mul(self, operand_a, operand_b):
         print(self.reg[operand_a] * self.reg[operand_b])
         self.pc += 3
@@ -130,8 +155,8 @@ class CPU:
             operand_b = self.ram_read(self.pc + 2)
             if ir in self.branchtable:
                 self.branchtable[ir](operand_a, operand_b)
-            # elif ir == PUSH:
-            #     self.push(operand_a, _)
+            elif ir == PUSH:
+                self.push(operand_a, _)
             elif ir == POP:
                 self.pop(operand_a, reg_a)
             elif ir == HLT:
