@@ -28,39 +28,70 @@ class CPU:
         self.reg[SP] = 0xF4  # assign stack pointer
         self.pc = 0  # program counter
         self.running = True
-        self.flag = 0b00000000
-        self.branchtable = {LDI: self.ldi,
-                            PRN: self.prn,
-                            MUL: self.mul,
-                            ADD: self.add,
-                            PUSH: self.push,
-                            POP: self.pop,
-                            # CALL: self.call,
-                            # RET: self.ret
-                            }
+        self.fl = 0b00000000
+        self.set_pc_flag = False  # true if instruction sets the pc
+        # self.branchtable = {LDI: self.ldi,
+        #                     PRN: self.prn,
+        # MUL: self.mul,
+        # ADD: self.add,
+        # PUSH: self.push,
+        # POP: self.pop,
+        # JMP: self.jmp,
+        # JEQ: self.jeq,
+        # JNE: self.jne
+        # CALL: self.call,
+        # RET: self.ret
+        # }
 
-    def ram_read(self, mar):
-        # should accept the addres to read and return the value stored there
-        # mar is the address value
-        return self.ram[mar]
+    # def ram_read(self, mar):
+    #     # should accept the addres to read and return the value stored there
+    #     # mar is the address value
+    #     return self.ram[mar]
 
-    def ram_write(self, mdr, mar):
-        # should accept a value to write, and the address to write it to
-        self.ram[mdr] = mar
+    # def ram_write(self, mdr, mar):
+    #     # should accept a value to write, and the address to write it to
+    #     self.ram[mdr] = mar
 
-    def push(self, operand_a, operand_b):
-        given_register = self.ram[self.pc + 1]
-        value_in_register = self.reg[given_register]
-        self.reg[SP] -= 1
-        self.ram[self.reg[SP]] = value_in_register
-        self.pc += 2
+    # def push(self, operand_a, operand_b):
+    #     given_register = self.ram[self.pc + 1]
+    #     value_in_register = self.reg[given_register]
+    #     self.reg[SP] -= 1
+    #     self.ram[self.reg[SP]] = value_in_register
+    #     self.pc += 2
 
-    def pop(self, operand_a, _):
-        given_register = self.ram[self.pc + 1]
-        value_from_ram = self.ram[self.reg[SP]]
-        self.reg[given_register] = value_from_ram
-        self.reg[SP] += 1
-        self.pc += 2
+    # def pop(self, operand_a, _):
+    #     given_register = self.ram[self.pc + 1]
+    #     value_from_ram = self.ram[self.reg[SP]]
+    #     self.reg[given_register] = value_from_ram
+    #     self.reg[SP] += 1
+    #     self.pc += 2
+
+    # def jmp(self, reg_a):
+    def jmp(self, reg_a):
+        # given_register = self.ram[self.pc + 1]
+        # self.pc = self.reg[given_register]
+        self.pc = self.reg[reg_a]
+
+    # def jne(self, reg_a):
+    def jne(self, reg_a):
+        # fl bits 00000LGE
+        # given_register = self.ram[self.pc + 1]
+        # address = self.reg[given_register]
+        address = self.reg[reg_a]
+        if self.fl != 0b00000001:
+            self.pc = address
+        else:
+            self.pc += 2
+
+    # def jeq(self, reg_a):
+    def jeq(self, reg_a):
+        # given_register = self.ram[self.pc + 1]
+        # address = self.reg[given_register]
+        address = self.reg[reg_a]
+        if self.fl == 0b00000001:
+            self.pc = address
+        else:
+            self.pc += 2
 
     # def call(self, operand_a, operand_b):
     #     given_register = self.ram[self.pc + 1]
@@ -75,11 +106,11 @@ class CPU:
     def alu(self, opcode, reg_a, reg_b):
         """ALU operations."""
 
-        if opcode == "ADD":
-            self.reg[reg_a] += self.reg[reg_b]
+        # if opcode == "ADD":
+        #     self.reg[reg_a] += self.reg[reg_b]
         # elif op == "SUB": etc
         # elif opcode == "AND"
-        elif opcode == "CMP":
+        if opcode == "CMP":
             self.fl &= 0b00000000
             # fl bits 00000LGE
             if self.reg[reg_a] == self.reg[reg_b]:
@@ -93,7 +124,7 @@ class CPU:
                 self.fl = 0b00000010
 
         else:
-            raise Exception("Unsupported ALU operation")
+            raise Exception("Unsupported operation")
         self.pc += 3
 
     def trace(self):
@@ -132,35 +163,68 @@ class CPU:
                 address += 1
         # print(self.ram)
 
-    def ldi(self, operand_a, operand_b):
-        self.reg[operand_a] = operand_b
+    # def ldi(self, operand_a, operand_b):
+    #     self.reg[operand_a] = operand_b
+    #     self.pc += 3
+
+    def ldi(self, reg_a, value):
+        self.reg[reg_a] = value
         self.pc += 3
 
-    def prn(self, operand_a, _):
-        print(self.reg[operand_a])
+    # def prn(self, operand_a):
+    #     print(self.reg[operand_a])
+    #     self.pc += 2
+
+    def prn(self, reg_a):
+        print(self.reg[reg_a])
         self.pc += 2
 
-    def mul(self, operand_a, operand_b):
-        print(self.reg[operand_a] * self.reg[operand_b])
-        self.pc += 3
+    # def mul(self, operand_a, operand_b):
+    #     print(self.reg[operand_a] * self.reg[operand_b])
+    #     self.pc += 3
 
-    def add(self, operand_a, operand_b):
-        self.alu("ADD", operand_a, operand_b)
+    # def add(self, operand_a, operand_b):
+    #     self.alu("ADD", operand_a, operand_b)
 
     def run(self):
-        # self.load()
+        self.load()
         while self.running:
-            ir = self.ram_read(self.pc)
-            operand_a = self.ram_read(self.pc + 1)
-            operand_b = self.ram_read(self.pc + 2)
-            if ir in self.branchtable:
-                self.branchtable[ir](operand_a, operand_b)
-            elif ir == PUSH:
-                self.push(operand_a, _)
-            elif ir == POP:
-                self.pop(operand_a, reg_a)
+            # ir = self.ram_read(self.pc)
+            ir = self.ram[self.pc]
+            # op_count = ((ir >> 6) & 0b1) == 1
+            # operand_a = self.ram_read(self.pc + 1)
+            # operand_b = self.ram_read(self.pc + 2)
+            # reg_a = self.ram_read(self.pc + 1)
+            # reg_b = self.ram_read(self.pc + 2)
+            # if ir in self.branchtable:
+            #     self.branchtable[ir](reg_a, reg_b)
+            # elif ir == PUSH:
+            #     self.push(operand_a, _)
+            # elif ir == POP:
+            #     self.pop(operand_a, reg_a)
+            if ir == CMP:
+                reg_a = self.ram[self.pc + 1]
+                reg_b = self.ram[self.pc + 2]
+                self.alu("CMP", reg_a, reg_b)
+            elif ir == LDI:
+                reg_a = self.ram[self.pc + 1]
+                value = self.ram[self.pc + 2]
+                self. ldi(reg_a, value)
+            elif ir == PRN:
+                reg_a = self.ram[self.pc + 1]
+                self.prn(reg_a)
+            elif ir == JMP:
+                reg_a = self.ram[self.pc + 1]
+                self.jmp(reg_a)
+            elif ir == JEQ:
+                reg_a = self.ram[self.pc + 1]
+                self.jeq(reg_a)
+            elif ir == JNE:
+                reg_a = self.ram[self.pc + 1]
+                self.jne(reg_a)
             elif ir == HLT:
                 self.running = False
                 sys.exit()
             else:
-                raise Exception("Unsupported operation")
+                # raise Exception("Unsupported operation")
+                print("unknown instruction")
